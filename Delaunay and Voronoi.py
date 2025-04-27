@@ -25,7 +25,38 @@ print(point_A)
 print(point_B)
 print(distance)
 
-# Find the point that creates the smallest circumcircle on one side of the edge between point A and B
+def find_center(point_1, point_2, point_3):
+   a1 = 2*(point_2[0]-point_1[0])
+   a2 = 2*(point_3[0]-point_1[0])
+   b1 = 2*(point_2[1]-point_1[1])
+   b2 = 2*(point_3[1]-point_1[1])
+   c1 = (point_2[0])**2+(point_2[1])**2-(point_1[0])**2-(point_1[1])**2
+   c2 = (point_3[0])**2+(point_3[1])**2-(point_1[0])**2-(point_1[1])**2
+   xc = (c1*b2-c2*b1)/(a1*b2-a2*b1)
+   yc = (a1*c2-a2*c1)/(a1*b2-a2*b1)
+   center = [xc, yc]
+   return center
+
+# Find the circumcircle through a third point C that does not enclose any other points. Only search on one side of the edge AB
+point_C = 1
+for point in range(1, num_points):
+  if (point!=point_A) and (point!=point_B):
+      edge_AB = np.array([points[point_B][0]-points[point_A][0], points[point_B][1]-points[point_A][1], 0])
+      edge_AC = np.array([points[point][0]-points[point_A][0], points[point][1]-points[point_A][1], 0])
+      point_orientation = np.cross(edge_AB, edge_AC)
+      if (point_orientation<0):
+          adx = points[point_A][0]-points[point][0]
+          bdx = points[point_B][0]-points[point][0]
+          cdx = points[point_C][0]-points[point][0]
+          ady = points[point_A][1]-points[point][1]
+          bdy = points[point_B][1]-points[point][1]
+          cdy = points[point_C][1]-points[point][1]          
+          matrix = np.array([[adx, ady, adx**2+ady**2],
+                            [bdx, bdy, bdx**2+bdy**2],
+                            [cdx, cdy, cdx**2+cdy**2]])
+          det = np.linalg.det(matrix)
+          if det<0:
+             point_C = point
 
 
 triplets = [] # points are stored as indices
