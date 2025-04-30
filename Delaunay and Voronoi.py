@@ -106,8 +106,8 @@ for point in range(1, num_points):
 							update_point_C = is_point_inside_circumcircle(points[point_A], points[point_B], points[point_C], points[point])
 							if update_point_C:
 									point_C = point
-									print("Point C (1): ", point_C)
-# Handle situations where no third point on the counterclockwise side of edge AB is found
+									print("Point C: ", point_C)
+# Handle situations where no third point is found
 if initialize_point_C:
    voronoi_boundary_edge = [0, point_A, point_B]
    voronoi_boundary_edges.append(voronoi_boundary_edge)
@@ -144,13 +144,16 @@ while len(active_triplets) > 0:
               if (point_orientation>0):
                   if initialize_point_C:
                     point_C = point
-                    radius_1 = find_radius(points[point_A], points[point_B], points[point_C])
+                    # radius_1 = find_radius(points[point_A], points[point_B], points[point_C])
                     initialize_point_C = False
                   else:
-                    radius_2 = find_radius(points[point_A], points[point_B], points[point])
-                    if radius_2 < radius_1:
-                        radius_1 = radius_2
-                        point_C = point
+                      # radius_2 = find_radius(points[point_A], points[point_B], points[point])
+                      # if radius_2 < radius_1:
+                      #     radius_1 = radius_2
+                      #     point_C = point
+                      update_point_C = is_point_inside_circumcircle(points[point_A], points[point_B], points[point_C], points[point])
+                      if update_point_C:
+                          point_C = point
         # Handle situations where no third point is found
         if initialize_point_C:
           # voronoi_boundary_edge = [active_triplets[active_triplet], point_A, point_B]
