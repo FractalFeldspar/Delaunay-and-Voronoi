@@ -22,6 +22,31 @@ def find_center(point_1, point_2, point_3):
 def find_radius(point_1, point_2, point_3):
    return distance(point_1, find_center(point_1, point_2, point_3))
 
+# def is_point_inside_circumcircle(point_1, point_2, point_3, point_4):
+#     is_point_inside = False
+#     adx = point_1[0]-point_4[0]
+#     bdx = point_2[0]-point_4[0]
+#     cdx = point_3[0]-point_4[0]
+#     ady = point_1[1]-point_4[1]
+#     bdy = point_2[1]-point_4[1]
+#     cdy = point_3[1]-point_4[1]        
+#     matrix = np.array([[adx, ady, adx**2+ady**2],
+#                       [bdx, bdy, bdx**2+bdy**2],
+#                       [cdx, cdy, cdx**2+cdy**2]])
+#     det = np.linalg.det(matrix)
+#     if det>0:
+#       is_point_inside = True
+#     return is_point_inside
+
+def is_point_inside_circumcircle(point_1, point_2, point_3, point_4):
+    is_point_inside = False
+    center = find_center(point_1, point_2, point_3)
+    radius = distance(point_1, center)
+    distance_to_point_4 = distance(center, point_4)
+    if distance_to_point_4<radius:
+      is_point_inside = True
+    return is_point_inside
+
 # Returns a vector that points from point 1 to point 2
 def vector(point_1, point_2):
    the_vector = [point_2[0]-point_1[0], point_2[1]-point_1[1]]
@@ -65,28 +90,27 @@ print("Point A:", point_A)
 print("Point B:", point_B)
 print("Distance: ", distance_1)
 
-# Find the smallest circumcircle through a third point C. Only search on one side of the edge AB
+# Find a circumcircle through a third point C that does not contain any other points
 initialize_point_C = True
 for point in range(1, num_points):
   if (point!=point_A) and (point!=point_B):
-      edge_AB = np.array([points[point_B][0]-points[point_A][0], points[point_B][1]-points[point_A][1], 0])
-      edge_AC = np.array([points[point][0]-points[point_A][0], points[point][1]-points[point_A][1], 0])
-      point_orientation = np.cross(edge_AB, edge_AC)[2]
-      if (point_orientation>0):
-          if initialize_point_C:
-             point_C = point
-             radius_1 = find_radius(points[point_A], points[point_B], points[point_C])
-             initialize_point_C = False
-             print("Initial point C: ", point_C)
-          else:
-             radius_2 = find_radius(points[point_A], points[point_B], points[point])
-             if radius_2 < radius_1:
-                radius_1 = radius_2
-                point_C = point
-                print("Point C: ", point_C)
-# Handle situations where no third point is found
+			edge_AB = np.array([points[point_B][0]-points[point_A][0], points[point_B][1]-points[point_A][1], 0])
+			edge_AC = np.array([points[point][0]-points[point_A][0], points[point][1]-points[point_A][1], 0])
+			point_orientation = np.cross(edge_AB, edge_AC)[2]
+			if point_orientation>0:
+					if initialize_point_C:
+							point_C = point
+							initialize_point_C = False
+							print("Initial point C: ", point_C)
+					else:
+							update_point_C = is_point_inside_circumcircle(points[point_A], points[point_B], points[point_C], points[point])
+							if update_point_C:
+									point_C = point
+									print("Point C (1): ", point_C)
+# Handle situations where no third point on the counterclockwise side of edge AB is found
 if initialize_point_C:
    voronoi_boundary_edge = [0, point_A, point_B]
+   voronoi_boundary_edges.append(voronoi_boundary_edge)
 else:
    triplets.append([point_A, point_B, point_C])
    active_triplets.append(len(triplets)-1)
