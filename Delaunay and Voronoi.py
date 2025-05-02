@@ -52,9 +52,10 @@ def vector(point_1, point_2):
    the_vector = [point_2[0]-point_1[0], point_2[1]-point_1[1]]
    return the_vector
 
-def does_edge_exist(edge, triplets):
-   edge_exists = False
+def find_matching_edge(edge, triplets):
+   triplet_index = None
    for triplet in range(len(triplets)):
+      edge_exists = False
       triplet_point_A, triplet_point_B, triplet_point_C = triplets[triplet]
       if edge[0]==triplet_point_A and edge[1]==triplet_point_B:
          edge_exists = True
@@ -62,7 +63,25 @@ def does_edge_exist(edge, triplets):
          edge_exists = True
       elif edge[0]==triplet_point_C and edge[1]==triplet_point_A:
          edge_exists = True
-   return edge_exists
+      if edge_exists:
+           triplet_index = triplet
+   return triplet_index
+
+# def find_duplicate_edge(edge, edges):
+#      duplicate_index = None
+#      for edge_index in range(len(edges)):
+#           if edges[edge_index][0]==edge[0] and edges[edge_index][1]==edge[1]:
+#                duplicate_index = edge_index
+#           elif edges[edge_index][1]==edge[0] and edges[edge_index][0]==edge[1]:
+#                duplicate_index = edge_index
+#      return duplicate_index
+
+def find_duplicate_edge(edge, edges):
+    edge_set = set(edge)
+    for i, e in enumerate(edges):
+        if set(e) == edge_set:
+            return i
+    return None
 
 num_points = 20
 max_value = 100
@@ -127,14 +146,19 @@ while len(active_triplets) > 0:
   ref_triplet_edges = []
   if active_triplet==0:
      ref_triplet_edges.append([triplet_point_B, triplet_point_A])
+  # ref_triplet_edges.append([triplet_point_B, triplet_point_A])
   ref_triplet_edges.append([triplet_point_C, triplet_point_B])
   ref_triplet_edges.append([triplet_point_A, triplet_point_C])
   for ref_edge in range(len(ref_triplet_edges)):
     #  Check if edge already has a circumcircle in both orientations
-    if not does_edge_exist(ref_triplet_edges[ref_edge], triplets):
+    matching_edge_triplet_index = find_matching_edge(ref_triplet_edges[ref_edge], triplets)
+    if matching_edge_triplet_index is not None:
+        if find_duplicate_edge([matching_edge_triplet_index, active_triplet], voronoi_center_edges) is None:
+             voronoi_center_edges.append([matching_edge_triplet_index, active_triplet])
+    else:
         point_A = ref_triplet_edges[ref_edge][0]
         point_B = ref_triplet_edges[ref_edge][1]
-        # Find the smallest circumcircle through a third point C. Only search on one side of the edge AB
+        # Find a circumcircle through a third point C that does not contain any other points
         initialize_point_C = True
         for point in range(1, num_points):
           if (point!=point_A) and (point!=point_B):
@@ -144,28 +168,29 @@ while len(active_triplets) > 0:
               if (point_orientation>0):
                   if initialize_point_C:
                     point_C = point
-                    # radius_1 = find_radius(points[point_A], points[point_B], points[point_C])
                     initialize_point_C = False
                   else:
-                      # radius_2 = find_radius(points[point_A], points[point_B], points[point])
-                      # if radius_2 < radius_1:
-                      #     radius_1 = radius_2
-                      #     point_C = point
                       update_point_C = is_point_inside_circumcircle(points[point_A], points[point_B], points[point_C], points[point])
                       if update_point_C:
                           point_C = point
         # Handle situations where no third point is found
         if initialize_point_C:
-          # voronoi_boundary_edge = [active_triplets[active_triplet], point_A, point_B]
-          1
+          voronoi_boundary_edge = [active_triplet, point_A, point_B]
+          voronoi_boundary_edges.append(voronoi_boundary_edge)
         else:
           triplets.append([point_A, point_B, point_C])
           active_triplets.append(len(triplets)-1)
-          edges.append([point_A, point_B])
-          edges.append([point_B, point_C])
-          edges.append([point_C, point_A])
-          # voronoi_center_edges.append([active_triplets[active_triplet], active_triplets[-1]])
+          if find_duplicate_edge([point_A, point_B], edges) == None:
+               edges.append([point_A, point_B])
+          if find_duplicate_edge([point_B, point_C], edges) == None:
+               edges.append([point_B, point_C])
+          if find_duplicate_edge([point_C, point_A], edges) == None:
+               edges.append([point_C, point_A])
+          voronoi_center_edges.append([active_triplet, active_triplets[-1]])
   active_triplets.pop(0)
+
+# print("Voronoi boundary edges: ", voronoi_boundary_edges)
+# print("Voronoi center edges: ", voronoi_center_edges)
 
 xValues, yValues = zip(*points)
 
@@ -175,7 +200,6 @@ for i in range(num_points):
     plt.text(xValues[i] + 0.2, yValues[i] + 0.2, str(i), fontsize=10)
 
 print("triplets: ", triplets)
-print("edges: ", edges)
 # Plot circumcircles
 for triplet in range(len(triplets)):
     circle_center = find_center(points[triplets[triplet][0]], points[triplets[triplet][1]], points[triplets[triplet][2]])
@@ -183,14 +207,55 @@ for triplet in range(len(triplets)):
     circle = patches.Circle((circle_center[0], circle_center[1]), radius=circle_radius, edgecolor='blue', facecolor='none', linewidth=0.5)
     ax.add_patch(circle)
 
-# Plot edges
+# Plot Delaunay edges
+print("edges: ", edges)
+print("Number of edges: ", len(edges))
 for edge in range(len(edges)):
    start_point = points[edges[edge][0]]
    end_point = points[edges[edge][1]]
    plt.plot([start_point[0], end_point[0]], [start_point[1], end_point[1]], 'k:')
 
-plt.xlim(0, max_value)  # x-axis will range from 0 to 5
-plt.ylim(0, max_value)  # y-axis will range from 0 to 20
+# Plot Voronoi center edges
+print("Voronoi center edges: ", voronoi_center_edges)
+print("Number of center edges: ", len(voronoi_center_edges))
+for center_edge in range(len(voronoi_center_edges)):
+    triplet_index_A = voronoi_center_edges[center_edge][0]
+    triplet_index_B = voronoi_center_edges[center_edge][1]
+    triplet_center_A = find_center(points[triplets[triplet_index_A][0]], points[triplets[triplet_index_A][1]], points[triplets[triplet_index_A][2]])
+    triplet_center_B = find_center(points[triplets[triplet_index_B][0]], points[triplets[triplet_index_B][1]], points[triplets[triplet_index_B][2]])
+    plt.plot([triplet_center_A[0], triplet_center_B[0]], [triplet_center_A[1], triplet_center_B[1]], 'r')
+
+# Plot Voronoi boundary edges
+print("Voronoi boundary edges: ", voronoi_boundary_edges)
+print("Number of boundary edges: ", len(voronoi_boundary_edges))
+if len(triplets)>0:
+    for boundary_edge in range(len(voronoi_boundary_edges)):
+        triplet_index = voronoi_boundary_edges[boundary_edge][0]
+        triplet_center = find_center(points[triplets[triplet_index][0]], points[triplets[triplet_index][1]], points[triplets[triplet_index][2]])
+        point_index_A = voronoi_boundary_edges[boundary_edge][1]
+        point_index_B = voronoi_boundary_edges[boundary_edge][2]
+        vector_AB = [points[point_index_B][0]-points[point_index_A][0], points[point_index_B][1]-points[point_index_A][1]]
+        outward_vector = [-1*vector_AB[1], vector_AB[0]]
+        outward_vector_mag = math.sqrt((outward_vector[0])**2+(outward_vector[1])**2)
+        outward_vector = [100/outward_vector_mag*element for element in outward_vector]
+        # min_x = min(xValues)
+        # max_x = max(xValues)
+        # min_y = min(yValues)
+        # max_y = max(yValues)
+        # ave_x = 0.5*(min_x+max_x)
+        # ave_y = 0.5*(min_y+max_y)
+        # outward_ref_dir = np.array([triplet_center[0]-ave_x, triplet_center[1]-ave_y])
+        # print("dot product: ", np.dot(outward_ref_dir, np.array(outward_vector)))
+        # if np.dot(outward_ref_dir, np.array(outward_vector))<0:
+        #      outward_vector = [-1*element for element in outward_vector]
+        outward_point = [triplet_center[0]+outward_vector[0], triplet_center[1]+outward_vector[1]]
+        plt.plot([triplet_center[0], outward_point[0]], [triplet_center[1], outward_point[1]], 'r')
+else:
+     print("Unable to begin Delaunay triangulation. Please re-run the code or generate more points.")
+
+extra_border = 15
+plt.xlim(0-extra_border, max_value+extra_border)
+plt.ylim(0-extra_border, max_value+extra_border)
 plt.gca().set_aspect('equal')
 plt.show()
 
